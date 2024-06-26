@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 from sqlalchemy.dialects.postgresql import UUID
@@ -11,6 +11,7 @@ class User(AbstractBase):
     name = Column(String, nullable=False)
     email = Column(String, nullable=False)
     password = Column(String, nullable=False)
+    is_verified = Column(Boolean, nullable=False, server_default=str(False))
     user_group = relationship("UserGroup", back_populates="user")
 
 

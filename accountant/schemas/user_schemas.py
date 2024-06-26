@@ -63,3 +63,7 @@ class UserGroupIVProfile(UserGroupInvitation):
 class PaginatedUserGroupIVProfile(AbstractModel):
     result_set: list[UserGroupIVProfile] = []
     result_size: conint(ge=0) = 0
+
+
+class TokenData(AbstractModel):
+    user_uid: UUID
