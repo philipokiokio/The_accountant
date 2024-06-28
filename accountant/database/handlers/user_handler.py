@@ -4,7 +4,7 @@ from accountant.database.orms.user_orm import UserGroup as UserGroupDB
 from accountant.database.orms.user_orm import UserGroupInvitation as UserGroupIVDB
 from accountant.database.orms.user_orm import UserUGroup as UserUGroupDB
 import logging
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import select, insert, update, delete, and_
 import accountant.schemas.user_schemas as schemas
 from accountant.services.service_utils.accountant_exceptions import (
     CreateError,
@@ -91,6 +91,33 @@ async def update_user(user_uid: UUID, user_update: schemas.UserUpdate):
         return schemas.UserExtendedProfile(**result.as_dict())
 
 
+async def all_user_update(user_uids, user_updates: list[schemas.UserUpdate]):
+
+    async with async_session() as session:
+
+        stmt = (
+            update(UserDB)
+            .filter(UserDB.user_uid.in_(user_uids))
+            .values(
+                *[
+                    user_update.model_dump(exclude_none=True)
+                    for user_update in user_updates
+                ]
+            )
+            .returning(UserDB)
+        )
+
+        result = (await session.execute(statement=stmt)).scalars().all()
+
+        if result is None:
+            await session.rollback()
+            raise UpdateError
+
+        await session.commit()
+
+        return [schemas.UserExtendedProfile(**x.as_dict()) for x in result]
+
+
 async def delete_user(user_uid: UUID):
     async with async_session() as session:
         stmt = delete(UserDB).filter(UserDB.user_uid == user_uid).returning(UserDB)
@@ -104,6 +131,18 @@ async def delete_user(user_uid: UUID):
         await session.commit()
 
         return schemas.UserExtendedProfile(**result.as_dict())
+
+
+async def get_all_user(is_alive: bool = None):
+    async with async_session() as session:
+        stmt = select(UserDB).filter(UserDB.is_alive == is_alive)
+
+        result = (await session.execute(statement=stmt)).scalars().all()
+
+        if result is None:
+            return []
+
+        return [schemas.UserExtendedProfile(**x.as_dict()) for x in result]
 
 
 # UserGroup
@@ -192,7 +231,41 @@ async def get_users_in_user_group(user_group_uid: UUID):
         )
 
 
+async def get_user_in_user_group(user_group_uid: UUID, user_uid: UUID):
+    async with async_session() as session:
+        stmt = select(UserUGroupDB).filter(
+            and_(
+                UserUGroupDB.user_group_uid == user_group_uid,
+                UserUGroupDB.user_uid == user_uid,
+            )
+        )
+
+        result = (await session.execute(statement=stmt)).scalar_one_or_none()
+
+        if result is None:
+
+            raise NotFoundError
+
+        return schemas.UserGroupMemberProfile(**result.as_dict())
+
+
 # User Invitation
+async def check_dependent(email: str, user_group_uid: UUID):
+
+    async with async_session() as session:
+        stmt = select(UserGroupIVDB).filter(
+            and_(
+                UserGroupIVDB.user_group_uid == user_group_uid,
+                UserGroupIVDB.email == email,
+            )
+        )
+
+        result = (await session.execute(statement=stmt)).scalar_one_or_none()
+
+        if result is None:
+            raise NotFoundError
+
+        return schemas.UserGroupIVProfile(**result.as_dict())
 
 
 async def create_dependent(user_g_iv: list[schemas.UserGroupInvitation]):
@@ -246,6 +319,31 @@ async def get_dependent(user_group_uid: UUID, uid: UUID):
         if result is None:
             raise NotFoundError
 
+        return schemas.UserGroupIVProfile(**result.as_dict())
+
+
+async def update_dependent(
+    user_group_uid: UUID,
+    uid: UUID,
+    dependent_invitation_update: schemas.UserGroupInvitationUpdate,
+):
+    async with async_session() as session:
+        stmt = (
+            update(UserGroupIVDB)
+            .filter(
+                UserGroupIVDB.user_group_uid == user_group_uid, UserGroupIVDB.uid == uid
+            )
+            .values(**dependent_invitation_update.model_dump(exclude_none=True))
+            .returning(UserGroupIVDB)
+        )
+
+        result = (await session.execute(statement=stmt)).scalar_one_or_none()
+
+        if result is None:
+            await session.rollback()
+            raise UpdateError
+
+        await session.commit()
         return schemas.UserGroupIVProfile(**result.as_dict())
 
 

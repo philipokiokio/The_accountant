@@ -5,20 +5,26 @@ from uuid import UUID
 from typing import Optional
 
 
-class User(AbstractModel):
-    name: str
-    email: EmailStr
+class Login(AbstractModel):
+    email: str
     password: str
+
+
+class User(Login):
+    name: str
 
 
 class UserUpdate(AbstractModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+    is_verified: Optional[bool] = None
+    is_alive: Optional[bool] = None
 
 
 class UserProfile(User):
     user_uid: UUID
+    is_verified: bool
     date_created_utc: datetime
 
 
@@ -55,9 +61,16 @@ class UserGroupInvitation(AbstractModel):
     user_group_uid: UUID
 
 
+class UserGroupInvitationUpdate(AbstractModel):
+
+    email: Optional[EmailStr] = None
+    is_accepted: Optional[bool] = None
+
+
 class UserGroupIVProfile(UserGroupInvitation):
     uid: UUID
     date_created_utc: datetime
+    is_accepted: bool
 
 
 class PaginatedUserGroupIVProfile(AbstractModel):
@@ -67,3 +80,8 @@ class PaginatedUserGroupIVProfile(AbstractModel):
 
 class TokenData(AbstractModel):
     user_uid: UUID
+
+
+class AccessRefreshPayload(AbstractModel):
+    access_token: str
+    refresh_token: str

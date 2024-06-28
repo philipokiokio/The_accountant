@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 from uuid import UUID
 import jwt
 from jwt.exceptions import InvalidTokenError, InvalidSignatureError
@@ -15,9 +14,9 @@ from itsdangerous import (
 from passlib.context import CryptContext
 import accountant.services.auth_service as user_service
 
-# import groundible.services.service_utils.gr_redis_utils as redis_utils
+import accountant.services.service_utils.redis_utils as redis_utils
 from accountant.root.settings import Settings
-from accountant.schemas.user_schemas import UserProfile, TokenData
+from accountant.schemas.user_schemas import TokenData
 
 LOGGER = logging.getLogger(__name__)
 settings = Settings()
@@ -84,7 +83,7 @@ def create_refresh_token(data: dict):
 async def verify_access_token(token: str):
     cache_token = redis_utils.get_token_blacklist(token=token)
     if cache_token:
-        raise HTTPException(detail=AuthStrings.blacklisted_token, status_code=401)
+        raise HTTPException(detail="access has been revoked, login", status_code=401)
     try:
         jwt_token = resolve_token(
             signed_token=token, max_age=ACCESS_TOKEN_EXPIRE_MINUTES
@@ -119,7 +118,7 @@ async def ws_access_token(token: str):
 async def verify_refresh_token(token: str):
     cache_token = redis_utils.get_token_blacklist(token=token)
     if cache_token:
-        raise HTTPException(detail=AuthStrings.blacklisted_token, status_code=401)
+        raise HTTPException(detail="access has been revoked, login", status_code=401)
     try:
         jwt_token = resolve_token(
             signed_token=token, max_age=REFRESH_TOKEN_EXPIRE_MINUTES
@@ -136,13 +135,11 @@ async def verify_refresh_token(token: str):
         )
         id: str = payload.get("user_uid")
         if id is None:
-            await redis_utils.delete_refresh_token(refresh_token=token)
             credentials_exception()
 
         token_data = TokenData(user_uid=id)
-    except (JWTError, ExpiredSignatureError) as e:
+    except (InvalidTokenError, InvalidSignatureError) as e:
         LOGGER.exception(e)
-        redis_utils.delete_refresh_token(refresh_token=token)
         credentials_exception()
 
     return token_data
@@ -159,7 +156,7 @@ async def get_new_access_token(token: str):
 def credentials_exception():
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=AuthStrings.credential_validation_error,
+        detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
@@ -179,21 +176,8 @@ async def get_current_user(
     user = await user_service.get_user(user_uid=token.user_uid)
     if user.is_verified is False:
         raise HTTPException(
-            detail=AuthStrings.account_not_verified,
+            detail="account is not verified",
             status_code=status.HTTP_400_BAD_REQUEST,
-        )
-
-    return user
-
-
-async def get_current_unverified_user(
-    token: TokenData = Depends(abstract_token),
-):
-    user = await user_service.get_user(user_uid=token.user_uid)
-    if user.user_type != UserType.admin.value:
-        raise HTTPException(
-            detail=AuthStrings.no_write_permission,
-            status_code=status.HTTP_403_FORBIDDEN,
         )
 
     return user

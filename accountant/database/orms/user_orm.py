@@ -12,6 +12,7 @@ class User(AbstractBase):
     email = Column(String, nullable=False)
     password = Column(String, nullable=False)
     is_verified = Column(Boolean, nullable=False, server_default=str(False))
+    is_alive = Column(Boolean, nullable=True)
     user_group = relationship("UserGroup", back_populates="user")
 
 
@@ -51,3 +52,7 @@ class UserGroupInvitation(AbstractBase):
         UUID, ForeignKey("user_group.user_group_uid"), default=uuid4
     )
     email = Column(String, nullable=False)
+    is_accepted = Column(
+        Boolean,
+        nullable=False,
+    )
