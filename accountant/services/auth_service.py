@@ -235,7 +235,7 @@ async def forgot_password(email: str):
     return {"message": "mail sent"}
 
 
-async def reset_password(token: int, new_password: str):
+async def reset_password(token: str, new_password: str):
     email = redis_utils.get_forget_token(token=token)
 
     if not email:
@@ -336,6 +336,27 @@ async def delete_user_from_user_group(user_uid: UUID, user_group_uid: UUID):
     )
 
     return {}
+
+
+async def change_password(old_password: str, new_password: str, user_uid: UUID):
+
+    user_profile = await check_user(user_uid=user_uid)
+
+    if (
+        auth_utils.verify_password(
+            plain_password=old_password, hashed_password=user_profile.password
+        )
+        is False
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="incorrect information"
+        )
+
+    user_profile.password = auth_utils.hash_password(plain_password=new_password)
+    return await update_user(
+        user_uid=user_uid,
+        user_update=schemas.UserUpdate(password=user_profile.password),
+    )
 
 
 ################################################## DEPENDENT INVITATION #######################################

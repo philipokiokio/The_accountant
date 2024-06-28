@@ -25,6 +25,7 @@ class UserUpdate(AbstractModel):
 class UserProfile(User):
     user_uid: UUID
     is_verified: bool
+    user_group_uid: Optional[UUID] = None
     date_created_utc: datetime
 
 
