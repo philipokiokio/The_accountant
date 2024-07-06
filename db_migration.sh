@@ -1,0 +1,1 @@
+python3 db_migrations.py

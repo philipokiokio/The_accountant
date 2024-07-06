@@ -7,6 +7,10 @@ from uuid import UUID
 import accountant.services.service_utils.redis_utils as redis_utils
 from accountant.services.service_utils.token_utils import gr_token_gen
 from accountant.root.utils.mailer import send_mail
+import logging
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 async def check_user(**kwargs):
@@ -449,9 +453,9 @@ async def send_invitation():
             user_group_uid=user_profile.user_group_uid
         )
 
-        dependent_emails = [dependent.email for dependent in user_dependents.result_set]
+        # dependent_emails = [dependent.email for dependent in user_dependents.result_set]
 
-        ug_token = auth_utils.sign_token(jwt_token=str(user_profile.user_group_uid))
+        # ug_token = auth_utils.sign_token(jwt_token=str(user_profile.user_group_uid))
 
         # TODO Send to Mailer Job
 
@@ -471,6 +475,20 @@ async def update_all_to_non_alive_users():
     # send to Mail JOB
 
     # Send PUSH NOTIFICATION
+
+
+async def i_am_alive(token: str):
+    try:
+        user_uid = auth_utils.resolve_token(
+            signed_token=token, max_age=60 * 60 * 24 * 30
+        )
+        await update_user(
+            user_uid=user_uid, user_update=schemas.UserUpdate(is_alive=True)
+        )
+
+    except Exception as e:
+
+        LOGGER.exception(e)
 
 
 # FUNC To Send Renminder to Users and another Fuction to Send email to Dependents to Join

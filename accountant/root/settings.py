@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     mail_port: str
     mail_server: str
     mail_from_name: str
+    db_migration_env: bool = True
 
     class Config:
         env_file = ".env"
