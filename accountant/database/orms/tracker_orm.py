@@ -1,5 +1,5 @@
 from accountant.root.utils.abstract_base import AbstractBase
-from sqlalchemy import Column, DECIMAL, String
+from sqlalchemy import Column, DECIMAL, String, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from uuid import uuid4
 
@@ -10,6 +10,8 @@ class Tracker(AbstractBase):
     tracker_uid = Column(UUID, primary_key=True, default=uuid4)
     amount = Column(DECIMAL, nullable=False)
     label = Column(String, nullable=True)
+    month = Column(String, nullable=False)
+    year = Column(Integer, nullable=False)
     description = Column(String, nullable=True)
-    amount_type = Column(String, nullable=False)
+    currency = Column(String, nullable=False)
     user_uid = Column(UUID, nullable=False)
