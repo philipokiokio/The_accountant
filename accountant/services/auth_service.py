@@ -38,7 +38,7 @@ async def create_user(user: schemas.User, user_group_token: str = None):
 
     except NotFoundError:
 
-        user_profile.password = auth_utils.hash_password(plain_password=user.password)
+        user.password = auth_utils.hash_password(plain_password=user.password)
         user_profile = await user_db_handler.create_user(user=user)
 
         await user_db_handler.create_user_group(user_uid=user_profile.user_uid)
@@ -90,9 +90,9 @@ async def create_user(user: schemas.User, user_group_token: str = None):
         redis_utils.add_user_verification_token(
             user_uid=user_profile.user_uid, token=user_token
         )
-        send_mail(
+        await send_mail(
             subject="Verify your account on The Accountant",
-            reciepients=list[user_profile.email],
+            reciepients=[user_profile.email],
             payload={"token": user_token},
             template="user_auth/token_email_template.html",
         )
@@ -154,9 +154,9 @@ async def resend_verification_token(email: str):
         user_uid=user_profile.user_uid, token=user_token
     )
 
-    send_mail(
+    await send_mail(
         subject="Verify your account on The Accountant",
-        reciepients=list[user_profile.email],
+        reciepients=[user_profile.email],
         payload={"token": user_token},
         template="user_auth/token_email_template.html",
     )

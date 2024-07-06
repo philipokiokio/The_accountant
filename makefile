@@ -28,7 +28,7 @@ install :
 
 
 local-migration:
-	alembic -c local_alembic.ini revision -m $(MESSAGE) --autogenerate
+	alembic -c local_alembic.ini revision -m "$(MESSAGE)" --autogenerate
 local-migrate:
 	alembic -c local_alembic.ini upgrade heads
 local-migrate-down:

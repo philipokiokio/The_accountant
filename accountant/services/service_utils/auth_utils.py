@@ -64,7 +64,7 @@ def resolve_token(signed_token: str, max_age: int = None):
 def create_access_token(data: dict):
     expire = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES) + datetime.utcnow()
     data.update({"exp": expire})
-    encoded_jwt = jwt.encode(claims=data, key=SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(payload=data, key=SECRET_KEY, algorithm=ALGORITHM)
     dangerous_access_token = sign_token(jwt_token=encoded_jwt)
 
     return dangerous_access_token
@@ -73,7 +73,7 @@ def create_access_token(data: dict):
 def create_refresh_token(data: dict):
     expire = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES) + datetime.utcnow()
     data.update({"exp": expire})
-    encoded_jwt = jwt.encode(claims=data, key=REFRESH_SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(payload=data, key=REFRESH_SECRET_KEY, algorithm=ALGORITHM)
 
     # add signed_token
     dangerous_refresh_token = sign_token(jwt_token=encoded_jwt)
@@ -94,7 +94,7 @@ async def verify_access_token(token: str):
         credentials_exception()
 
     try:
-        payload = jwt.decode(token=jwt_token, key=SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(jwt=jwt_token, key=SECRET_KEY, algorithms=[ALGORITHM])
 
         id: str = payload.get("user_uid")
         if id is None:
@@ -131,7 +131,7 @@ async def verify_refresh_token(token: str):
 
     try:
         payload = jwt.decode(
-            token=jwt_token, key=REFRESH_SECRET_KEY, algorithms=ALGORITHM
+            jwt=jwt_token, key=REFRESH_SECRET_KEY, algorithms=ALGORITHM
         )
         id: str = payload.get("user_uid")
         if id is None:

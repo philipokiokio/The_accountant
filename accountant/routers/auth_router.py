@@ -10,7 +10,7 @@ api_router = APIRouter(prefix="/v1/auth", tags=["User Authentication"])
 @api_router.post(
     path="/sign-up",
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UserProfile,
+    response_model=schemas.AccessRefreshPayload,
 )
 async def sign_up(user_cred: schemas.User, user_group_token: str = None):
 
@@ -48,7 +48,11 @@ async def re_verify_account(email: EmailStr = Body(embed=True)):
     return await auth_service.resend_verification_token(email=email)
 
 
-@api_router.patch(path="/verify-account", status_code=status.HTTP_200_OK)
+@api_router.patch(
+    path="/verify-account",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.UserExtendedProfile,
+)
 async def verify_account(token: str):
     return await auth_service.verify_user(token=token)
 
@@ -59,7 +63,11 @@ async def forgot_password(email: EmailStr = Body(embed=True)):
     return await auth_service.forgot_password(email=email)
 
 
-@api_router.patch(path="/re-forgot-password", status_code=status.HTTP_200_OK)
+@api_router.patch(
+    path="/re-forgot-password",
+    status_code=status.HTTP_200_OK,
+    response_model=schemas.UserExtendedProfile,
+)
 async def reset_password(
     token: str = Body(embed=True), new_password: str = Body(embed=True)
 ):

@@ -2,7 +2,7 @@ from accountant.root.utils.abstract_schema import AbstractModel
 from pydantic import EmailStr, conint
 from datetime import datetime
 from uuid import UUID
-from typing import Optional
+from typing import ClassVar, Optional
 
 
 class Login(AbstractModel):
@@ -31,6 +31,7 @@ class UserProfile(User):
 
 class UserExtendedProfile(UserProfile):
     dependents: Optional[list[UserProfile]] = []
+    password: ClassVar[str]
 
 
 class UserGroup(AbstractModel):
