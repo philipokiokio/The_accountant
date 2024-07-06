@@ -18,3 +18,5 @@ class Earning(AbstractBase):
         UUID, ForeignKey("users.user_uid", ondelete="CASCADE"), nullable=False
     )
     user = relationship("User")
+
+    # percentage_change_from_last_month
