@@ -81,9 +81,9 @@ async def delete_tracker(
 
 
 @api_router.get(
-    path="/dashboard",
+    path="s/dashboard",
     status_code=status.HTTP_200_OK,
-    # response_model=schemas.TrackerProfile,
+    response_model=schemas.TrackingDashBoard,
 )
 async def get_tracker_dashboard(
     user_profile: UserExtendedProfile = Depends(get_current_user),

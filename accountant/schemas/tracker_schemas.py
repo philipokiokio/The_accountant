@@ -1,8 +1,12 @@
 from pydantic import condecimal, conint
 
-from accountant.root.utils.abstract_schema import AbstractModel
+from accountant.root.utils.abstract_schema import (
+    AbstractModel,
+    Currency,
+    Month,
+    DashBoard,
+)
 from typing import Optional
-from accountant.schemas.earning_schemas import Currency, Month, month_fetch
 from uuid import UUID
 from datetime import datetime
 
@@ -22,7 +26,7 @@ class TrackerExtended(Tracker):
 
 class TrackerProfile(TrackerExtended):
     tracker_uid: UUID
-    date_crated_utc: datetime
+    date_created_utc: datetime
 
 
 class PaginatedTrackerProfile(AbstractModel):
@@ -35,3 +39,6 @@ class TrackerUpdate(AbstractModel):
     label: Optional[str] = None
     description: Optional[str] = None
     currency: Optional[Currency] = None
+
+
+class TrackingDashBoard(DashBoard): ...

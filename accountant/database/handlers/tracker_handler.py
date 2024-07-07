@@ -45,11 +45,13 @@ async def get_trackings(user_uid: UUID, **kwargs):
         if not result:
             return schemas.PaginatedTrackerProfile()
 
-        result_size = await session.execute(
-            statement=select(func.count(TrackerDB.user_uid)).filter(
-                TrackerDB.user_uid == user_uid
+        result_size = (
+            await session.execute(
+                statement=select(func.count(TrackerDB.user_uid)).filter(
+                    TrackerDB.user_uid == user_uid
+                )
             )
-        )
+        ).scalar()
 
         return schemas.PaginatedTrackerProfile(
             result_set=[schemas.TrackerProfile(**x.as_dict()) for x in result],
@@ -119,7 +121,46 @@ async def tracking_dashboard(user_uid: UUID):
 
         summary_result = (await session.execute(statement=summary_stmt)).scalars().all()
 
+        summary = {}
+        year_trend = {}
         for result in summary_result:
 
-            ...
-        ...
+            amount, month, year, currency = (
+                result.amount,
+                result.month,
+                result.year,
+                result.currency,
+            )
+
+            if currency not in summary:
+                summary[currency] = {year: amount}
+            elif currency in summary:
+                if summary[currency].get(year) is None:
+                    summary[currency][year] = amount
+                else:
+                    summary[currency][year] += amount
+
+            if year not in year_trend:
+                year_trend = {year: {currency: {month: {"amount": amount}}}}
+
+            elif year in year_trend:
+                if year_trend[year].get(currency) is None:
+
+                    year_trend[year][currency] = {
+                        month: {
+                            "amount": amount,
+                        }
+                    }
+
+                elif year_trend[year].get(currency):
+                    if year_trend[year][currency].get(month):
+
+                        year_trend[year][currency][month]["amount"] += amount
+
+                    else:
+
+                        year_trend[year][currency][month] = {
+                            "amount": amount,
+                        }
+
+        return schemas.TrackingDashBoard(summary=summary, yearly_chart=year_trend)

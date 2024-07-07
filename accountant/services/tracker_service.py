@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from accountant.services.service_utils.accountant_exceptions import NotFoundError
 from datetime import date
 from uuid import UUID
+from accountant.services.service_utils.date_utils import month_fetch
 
 
 async def create_tracker_records(user_uid: UUID, tracker_set: list[schemas.Tracker]):
@@ -13,7 +14,7 @@ async def create_tracker_records(user_uid: UUID, tracker_set: list[schemas.Track
         schemas.TrackerExtended(
             **tracker.model_dump(),
             year=date.today().year,
-            month=schemas.month_fetch(key=date.today().month),
+            month=month_fetch(key=date.today().month),
             user_uid=user_uid
         )
         for tracker in tracker_set

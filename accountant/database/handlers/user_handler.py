@@ -53,7 +53,7 @@ async def check_user(**kwargs):
 
             raise NotFoundError
 
-        return schemas.UserExtendedProfile(**result.as_dict())
+        return schemas.UserProfile(**result.as_dict())
 
 
 async def get_user(user_uid: UUID):
