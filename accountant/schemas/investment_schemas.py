@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
-from pydantic import conint, condecimal
+from pydantic import conint, condecimal, EmailStr
 
 
 class PlatformType(str, Enum):
@@ -12,7 +12,7 @@ class PlatformType(str, Enum):
 
 
 class PlatformAccessCredential(AbstractModel):
-    email: Optional[str]
+    email: Optional[EmailStr]
     access_username: Optional[str]
     password: str
     transaction_pin: Optional[str]
@@ -23,15 +23,16 @@ class Platform(AbstractModel):
     platform_website: str
     name: str
     platform_type: PlatformType
-    access_credential: PlatformAccessCredential
+    access_credential: Optional[PlatformAccessCredential] = None
 
 
 class PlatformProfile(Platform):
     platform_uid: UUID
+    user_group_uid: UUID
     date_created_utc: datetime
 
 
-class PaginatedProfile(AbstractModel):
+class PaginatedPlatformProfile(AbstractModel):
     result_set: list[PlatformProfile] = []
     result_size: conint(ge=0) = 0
 
@@ -41,11 +42,6 @@ class PlatformUpdate(AbstractModel):
     name: Optional[str] = None
     platform_type: Optional[PlatformType] = None
     access_credential: Optional[PlatformAccessCredential] = None
-
-
-class Investment(AbstractModel):
-
-    return_on_investment: condecimal(ge=0, le=100)
 
 
 class InvestmentClass(str, Enum):
@@ -59,13 +55,17 @@ class TransactionType(str, Enum):
     credit = "CREDIT"
 
 
-class InvestmentExtended(Investment):
+class Investment(AbstractModel):
+
+    return_on_investment: condecimal(ge=0, le=100)
+
     nature: InvestmentClass
     is_still_open: bool = True
 
 
-class InvestmentProfile(InvestmentExtended):
+class InvestmentProfile(Investment):
     investment_uid: UUID
+    platform_uid: UUID
     date_created_utc: datetime
     activities: list = []
 

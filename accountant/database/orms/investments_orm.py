@@ -27,6 +27,7 @@ class Investment(AbstractBase):
     platform_uid = Column(
         UUID, ForeignKey("platforms.platform_uid", ondelete="CASCADE"), nullable=False
     )
+    plan_name = Column(String, nullable=False)
     nature = Column(String, nullable=False)
     end_date = Column(Date, nullable=False)
     is_still_open = Column(Boolean, nullable=False)
