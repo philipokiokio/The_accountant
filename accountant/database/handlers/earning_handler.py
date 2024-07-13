@@ -1,16 +1,16 @@
-from accountant.root.database import async_session
-from accountant.database.orms.earnings_orm import Earning as EarningDB
 import logging
-from sqlalchemy import select, insert, update, delete, and_, func
+from uuid import UUID
+
+from sqlalchemy import delete, func, insert, select, update
+
 import accountant.schemas.earning_schemas as schemas
+from accountant.database.orms.earnings_orm import Earning as EarningDB
+from accountant.root.database import async_session
 from accountant.services.service_utils.accountant_exceptions import (
-    CreateError,
     DeleteError,
     NotFoundError,
     UpdateError,
 )
-from uuid import UUID
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -174,4 +174,5 @@ async def earning_dashboard(user_uid: UUID, **kwargs):
                         "amount": amount,
                     }
 
+    return schemas.EarningDashBoard(summary=summary, yearly_chart=year_trend)
     return schemas.EarningDashBoard(summary=summary, yearly_chart=year_trend)

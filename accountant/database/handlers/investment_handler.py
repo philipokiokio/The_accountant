@@ -1,19 +1,21 @@
-from accountant.root.database import async_session
-from accountant.database.orms.investments_orm import Platform as PlatformDB
+from uuid import UUID
+
+from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.orm import joinedload
+
+import accountant.schemas.investment_schemas as schemas
 from accountant.database.orms.investments_orm import Investment as InvestmentDB
 from accountant.database.orms.investments_orm import (
     InvestmentTracker as InvestmentTrackerDB,
 )
-
-from sqlalchemy import select, insert, update, delete, and_, func
-import accountant.schemas.investment_schemas as schemas
+from accountant.database.orms.investments_orm import Platform as PlatformDB
+from accountant.root.database import async_session
 from accountant.services.service_utils.accountant_exceptions import (
     CreateError,
     DeleteError,
     NotFoundError,
     UpdateError,
 )
-from uuid import UUID
 
 
 async def check_platform(name: str, user_group_uid: UUID):
@@ -60,9 +62,15 @@ async def get_platforms(user_group_uid: UUID):
 
     async with async_session() as session:
 
-        stmt = select(PlatformDB).filter(PlatformDB.user_group_uid == user_group_uid)
+        stmt = (
+            select(PlatformDB)
+            .options(
+                joinedload(PlatformDB.investment).joinedload(InvestmentDB.trackers)
+            )
+            .filter(PlatformDB.user_group_uid == user_group_uid)
+        )
 
-        result = (await session.execute(statement=stmt)).scalars().all()
+        result = (await session.execute(statement=stmt)).unique().scalars().all()
         if result is None:
 
             return schemas.PaginatedPlatformProfile()
@@ -76,7 +84,16 @@ async def get_platforms(user_group_uid: UUID):
         ).scalar()
 
         return schemas.PaginatedPlatformProfile(
-            result_set=[schemas.PlatformProfile(**x.as_dict()) for x in result],
+            result_set=[
+                schemas.PlatformProfile(
+                    **x.as_dict(),
+                    investment_plans=[
+                        schemas.InvestmentProfile(**y.as_dict(), activities=y.trackers)
+                        for y in x.investment
+                    ],
+                )
+                for x in result
+            ],
             result_size=result_size,
         )
 
@@ -85,18 +102,30 @@ async def get_platform(user_group_uid: UUID, platform_uid: UUID):
 
     async with async_session() as session:
 
-        stmt = select(PlatformDB).filter(
-            PlatformDB.user_group_uid == user_group_uid,
-            PlatformDB.platform_uid == platform_uid,
+        stmt = (
+            select(PlatformDB)
+            .options(
+                joinedload(PlatformDB.investment).joinedload(InvestmentDB.trackers)
+            )
+            .filter(
+                PlatformDB.user_group_uid == user_group_uid,
+                PlatformDB.platform_uid == platform_uid,
+            )
         )
 
-        result = (await session.execute(statement=stmt)).scalar_one_or_none()
+        result = (await session.execute(statement=stmt)).unique().scalar_one_or_none()
 
         if result is None:
 
             raise NotFoundError
 
-        return schemas.PlatformProfile(**result.as_dict())
+        return schemas.PlatformProfile(
+            **result.as_dict(),
+            investment_plans=[
+                schemas.InvestmentProfile(**y.as_dict(), activities=y.trackers)
+                for y in result.investment
+            ],
+        )
 
 
 async def update_platform(platform_uid: UUID, platform_update: schemas.PlatformUpdate):
@@ -146,12 +175,36 @@ async def delete_platform(platform_uid: UUID):
 ################################ Investment #################################
 
 
-async def create_investment(platform_uid: UUID, investment: schemas.Investment):
+async def check_investment(platform_uid: UUID, user_group_uid: UUID, plan_name: str):
+
+    async with async_session() as session:
+        stmt = select(InvestmentDB).filter(
+            InvestmentDB.user_group_uid == user_group_uid,
+            InvestmentDB.platform_uid == platform_uid,
+            InvestmentDB.plan_name == plan_name,
+        )
+
+        result = (await session.execute(statement=stmt)).scalar_one_or_none()
+
+        if result is None:
+
+            raise NotFoundError
+
+        return schemas.InvestmentProfile(**result.as_dict())
+
+
+async def create_investment(
+    platform_uid: UUID, user_group_uid: UUID, investment: schemas.Investment
+):
     async with async_session() as session:
 
         stmt = (
             insert(InvestmentDB)
-            .values(platform_uid=platform_uid, **investment.model_dump())
+            .values(
+                user_group_uid=user_group_uid,
+                platform_uid=platform_uid,
+                **investment.model_dump(),
+            )
             .returning(InvestmentDB)
         )
 
@@ -171,9 +224,13 @@ async def get_investments(platform_uid: UUID):
 
     async with async_session() as session:
 
-        stmt = select(InvestmentDB).filter(InvestmentDB.platform_uid == platform_uid)
+        stmt = (
+            select(InvestmentDB)
+            .options(joinedload(InvestmentDB.trackers))
+            .filter(InvestmentDB.platform_uid == platform_uid)
+        )
 
-        result = (await session.execute(statement=stmt)).scalars().all()
+        result = (await session.execute(statement=stmt)).unique().scalars().all()
 
         if not result:
 
@@ -188,7 +245,10 @@ async def get_investments(platform_uid: UUID):
         ).scalar()
 
         return schemas.PaginatedInvestmentProfile(
-            result_set=[schemas.InvestmentProfile(**x.as_dict()) for x in result],
+            result_set=[
+                schemas.InvestmentProfile(**x.as_dict(), activities=x.trackers)
+                for x in result
+            ],
             result_size=result_size,
         )
 
@@ -196,18 +256,22 @@ async def get_investments(platform_uid: UUID):
 async def get_investment(platform_uid: UUID, investment_uid: UUID):
     async with async_session() as session:
 
-        stmt = select(InvestmentDB).filter(
-            InvestmentDB.platform_uid == platform_uid,
-            InvestmentDB.investment_uid == investment_uid,
+        stmt = (
+            select(InvestmentDB)
+            .options(joinedload(InvestmentDB.trackers))
+            .filter(
+                InvestmentDB.platform_uid == platform_uid,
+                InvestmentDB.investment_uid == investment_uid,
+            )
         )
 
-        result = (await session.execute(statement=stmt)).scalar_one_or_none()
+        result = (await session.execute(statement=stmt)).unique().scalar_one_or_none()
 
         if result is None:
 
             raise NotFoundError
 
-        return schemas.InvestmentProfile(**result.as_dict())
+        return schemas.InvestmentProfile(**result.as_dict(), activities=result.trackers)
 
     ...
 
@@ -271,8 +335,11 @@ async def create_investment_tracker(
     async with async_session() as session:
         stmt = (
             insert(InvestmentTrackerDB)
-            .values(investment_uid=investment_uid, **investment_tracker.model_dump())
-            .returning(InvestmentDB)
+            .values(
+                **investment_tracker.model_dump(),
+                investment_uid=investment_uid,
+            )
+            .returning(InvestmentTrackerDB)
         )
 
         result = (await session.execute(statement=stmt)).scalar_one_or_none()
@@ -372,4 +439,5 @@ async def delete_investment_tracker(uid: UUID):
 
         await session.commit()
 
+        return schemas.InvestmentTrackerProfile(**result.as_dict())
         return schemas.InvestmentTrackerProfile(**result.as_dict())

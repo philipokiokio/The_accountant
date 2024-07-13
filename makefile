@@ -49,10 +49,10 @@ celery_jobs:
 
 
 format : 
-	$(BLACK) --preview ./groundible
+	$(BLACK) --preview ./accountant
 
 standard:
-	$(RUFF) check ./groundible --ignore=E731,E712
+	$(RUFF) check ./accountant --ignore=E731,E712
 
 
 env_db_migration: 

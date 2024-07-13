@@ -30,7 +30,7 @@ def resolve_token(signed_token: str, user_group_uid: UUID):
 
 def platform_encoder(platform: schemas.Platform, user_group_uid: UUID):
 
-    if platform.access_credential is None:
+    if platform.access_credential is not None:
         platform.access_credential = schemas.PlatformAccessCredential(
             **platform.access_credential.model_dump()
         )
@@ -58,13 +58,12 @@ def platform_encoder(platform: schemas.Platform, user_group_uid: UUID):
                 data=platform.access_credential.transaction_pin,
                 user_group_uid=user_group_uid,
             )
-
     return platform
 
 
 def platform_decoder(platform: schemas.PlatformProfile):
 
-    if platform.access_credential is None:
+    if platform.access_credential is not None:
         platform.access_credential = schemas.PlatformAccessCredential(
             **platform.access_credential.model_dump()
         )
@@ -72,26 +71,26 @@ def platform_decoder(platform: schemas.PlatformProfile):
         if platform.access_credential.email:
 
             platform.access_credential.email = resolve_token(
-                data=platform.access_credential.email,
+                signed_token=platform.access_credential.email,
                 user_group_uid=platform.user_group_uid,
             )
 
         if platform.access_credential.access_username:
-            platform.access_credential.access_username = sign_data(
-                data=platform.access_credential.access_username,
+            platform.access_credential.access_username = resolve_token(
+                signed_token=platform.access_credential.access_username,
                 user_group_uid=platform.user_group_uid,
             )
 
         if platform.access_credential.password:
 
-            platform.access_credential.password = sign_data(
-                data=platform.access_credential.password,
+            platform.access_credential.password = resolve_token(
+                signed_token=platform.access_credential.password,
                 user_group_uid=platform.user_group_uid,
             )
 
         if platform.access_credential.transaction_pin:
-            platform.access_credential.transaction_pin = sign_data(
-                data=platform.access_credential.transaction_pin,
+            platform.access_credential.transaction_pin = resolve_token(
+                signed_token=platform.access_credential.transaction_pin,
                 user_group_uid=platform.user_group_uid,
             )
 

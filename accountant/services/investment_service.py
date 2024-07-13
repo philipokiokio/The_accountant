@@ -27,7 +27,10 @@ async def create_platform(user_group_uid: UUID, platform: schemas.Platform):
 
     try:
         await check_platform(platform_name=platform.name, user_group_uid=user_group_uid)
-
+        raise HTTPException(
+            detail="user has added this platform",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
     except NotFoundError:
 
         # Encoding the platform access credentials.
@@ -43,7 +46,7 @@ async def create_platform(user_group_uid: UUID, platform: schemas.Platform):
 
 async def get_platforms(user_group_uid: UUID):
 
-    return await investment_handler.get_platforms(user_uid=user_group_uid)
+    return await investment_handler.get_platforms(user_group_uid=user_group_uid)
 
 
 async def get_platform(user_group_uid: UUID, platform_uid: UUID):
@@ -61,7 +64,7 @@ async def get_platform(user_group_uid: UUID, platform_uid: UUID):
 
 
 async def decode_platform(
-    user_group_uid: UUID, platform_uid: UUID, user_password, user_uid: UUID
+    user_group_uid: UUID, platform_uid: UUID, user_password: str, user_uid: UUID
 ):
 
     platform = await get_platform(
@@ -72,7 +75,7 @@ async def decode_platform(
 
     if (
         auth_utils.verify_password(
-            plain_password=user_password, hashed_password=user_profile.user_uid
+            plain_password=user_password, hashed_password=user_profile.password
         )
         is False
     ):
@@ -107,11 +110,35 @@ async def delete_platform(user_group_uid: UUID, platform_uid: UUID):
 # ######################################### Investment ##################################################
 
 
-async def create_investment(platform_uid: UUID, investment: schemas.Investment):
+async def check_investment(plan_name: str, platform_uid: UUID, user_group_uid: UUID):
 
-    return await investment_handler.create_investment(
-        investment=investment, platform_uid=platform_uid
+    return await investment_handler.check_investment(
+        plan_name=plan_name, platform_uid=platform_uid, user_group_uid=user_group_uid
     )
+
+
+async def create_investment(
+    platform_uid: UUID, user_group_uid: UUID, investment: schemas.Investment
+):
+
+    investment.plan_name = investment.plan_name.capitalize().strip()
+
+    try:
+        await check_investment(
+            plan_name=investment.plan_name,
+            platform_uid=platform_uid,
+            user_group_uid=user_group_uid,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="plan already exists"
+        )
+    except NotFoundError:
+
+        return await investment_handler.create_investment(
+            investment=investment,
+            platform_uid=platform_uid,
+            user_group_uid=user_group_uid,
+        )
 
 
 async def get_investments(platform_uid: UUID, user_group_uid: UUID):
@@ -155,7 +182,11 @@ async def delete_investment(
     platform_uid: UUID, investment_uid: UUID, user_group_uid: UUID
 ):
 
-    await get_investment(platform_uid=platform_uid, investment_uid=investment_uid)
+    await get_investment(
+        platform_uid=platform_uid,
+        user_group_uid=user_group_uid,
+        investment_uid=investment_uid,
+    )
 
     await investment_handler.delete_investment(
         investment_uid=investment_uid, user_group_uid=user_group_uid

@@ -1,8 +1,12 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from accountant.root.app_router import api_router as api
 import time
+from accountant.root.settings import Settings
+
+
+settings = Settings()
 
 
 def intialize() -> FastAPI:
@@ -39,4 +43,7 @@ async def add_process_time_header(request: Request, call_next):
 
 @app.get("/", status_code=307)
 def root():
-    return RedirectResponse(url="/docs")
+    if settings.db_migration_env is False:
+        return RedirectResponse(url="/docs")
+
+    raise HTTPException(detail="not found", status_code=404)

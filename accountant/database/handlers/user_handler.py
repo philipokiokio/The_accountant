@@ -1,19 +1,21 @@
-from accountant.root.database import async_session
+import logging
+from uuid import UUID
+
+from sqlalchemy import and_, delete, insert, select, update
+from sqlalchemy.orm import joinedload
+
+import accountant.schemas.user_schemas as schemas
 from accountant.database.orms.user_orm import User as UserDB
 from accountant.database.orms.user_orm import UserGroup as UserGroupDB
 from accountant.database.orms.user_orm import UserGroupInvitation as UserGroupIVDB
 from accountant.database.orms.user_orm import UserUGroup as UserUGroupDB
-import logging
-from sqlalchemy import select, insert, update, delete, and_
-import accountant.schemas.user_schemas as schemas
+from accountant.root.database import async_session
 from accountant.services.service_utils.accountant_exceptions import (
     CreateError,
     DeleteError,
     NotFoundError,
     UpdateError,
 )
-from uuid import UUID
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -59,14 +61,21 @@ async def check_user(**kwargs):
 async def get_user(user_uid: UUID):
 
     async with async_session() as session:
-        stmt = select(UserDB).filter(UserDB.user_uid == user_uid)
+        stmt = (
+            select(UserDB)
+            .options(joinedload(UserDB.user_group))
+            .filter(UserDB.user_uid == user_uid)
+        )
 
-        result = (await session.execute(statement=stmt)).scalar_one_or_none()
+        result = (await session.execute(statement=stmt)).unique().scalar_one_or_none()
 
         if result is None:
             raise NotFoundError
 
-        return schemas.UserExtendedProfile(**result.as_dict())
+        return schemas.UserExtendedProfile(
+            **result.as_dict(),
+            user_group=result.user_group[0] if result.user_group else None
+        )
 
 
 async def update_user(user_uid: UUID, user_update: schemas.UserUpdate):
@@ -135,9 +144,13 @@ async def delete_user(user_uid: UUID):
 
 async def get_all_user(is_alive: bool = None):
     async with async_session() as session:
-        stmt = select(UserDB).filter(UserDB.is_alive == is_alive)
+        stmt = (
+            select(UserDB)
+            .options(joinedload(UserDB.user_group))
+            .filter(UserDB.is_alive == is_alive)
+        )
 
-        result = (await session.execute(statement=stmt)).scalars().all()
+        result = (await session.execute(statement=stmt)).unique().scalars().all()
 
         if result is None:
             return []
@@ -364,4 +377,5 @@ async def delete_dependent(user_group_uid: UUID, uid: UUID):
             raise DeleteError
 
         await session.commit()
+        return schemas.UserGroupIVProfile(**result.as_dict())
         return schemas.UserGroupIVProfile(**result.as_dict())

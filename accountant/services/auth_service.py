@@ -1,14 +1,15 @@
-import accountant.schemas.user_schemas as schemas
-import accountant.database.handlers.user_handler as user_db_handler
-from accountant.services.service_utils.accountant_exceptions import NotFoundError
-from fastapi import HTTPException, status
-import accountant.services.service_utils.auth_utils as auth_utils
-from uuid import UUID
-import accountant.services.service_utils.redis_utils as redis_utils
-from accountant.services.service_utils.token_utils import gr_token_gen
-from accountant.root.utils.mailer import send_mail
 import logging
+from uuid import UUID
 
+from fastapi import HTTPException, status
+
+import accountant.database.handlers.user_handler as user_db_handler
+import accountant.schemas.user_schemas as schemas
+import accountant.services.service_utils.auth_utils as auth_utils
+import accountant.services.service_utils.redis_utils as redis_utils
+from accountant.root.utils.mailer import send_mail
+from accountant.services.service_utils.accountant_exceptions import NotFoundError
+from accountant.services.service_utils.token_utils import gr_token_gen
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,8 +51,6 @@ async def create_user(user: schemas.User, user_group_token: str = None):
             auth_utils.create_access_token(data=user_profile_dict),
             auth_utils.create_refresh_token(data=user_profile_dict),
         )
-        # User GROUP
-        await create_user_group(user_uid=user_profile.user_uid)
 
         if user_group_token:
             try:
@@ -67,7 +66,7 @@ async def create_user(user: schemas.User, user_group_token: str = None):
                 if user_group_uid:
                     user_group_uid = UUID(user_group_uid)
                     dependent_profile = await dependent_check(
-                        email=user_profile.email, user_group_uid=user_group_token
+                        email=user_profile.email, user_group_uid=user_group_uid
                     )
                     await update_dependent(
                         uid=dependent_profile.uid,
@@ -81,10 +80,19 @@ async def create_user(user: schemas.User, user_group_token: str = None):
                         user_uid=user_profile.user_uid,
                         user_group_uid=dependent_profile.user_group_uid,
                     )
+                    await user_db_handler.update_user(
+                        user_uid=user_profile.user_uid,
+                        user_update=schemas.UserUpdate(
+                            added_to_user_group_uid=user_group_uid
+                        ),
+                    )
 
             except NotFoundError:
                 # TODO RESOLVER
                 pass
+        else:
+            # User GROUP
+            await create_user_group(user_uid=user_profile.user_uid)
 
         user_token = gr_token_gen()
         redis_utils.add_user_verification_token(
@@ -289,7 +297,8 @@ async def create_user_group(user_uid: UUID):
         return await get_user_group(user_uid=user_uid)
 
     except HTTPException:
-        return await user_db_handler.create_user_group(user_uid=user_uid)
+        user_group_profile = await user_db_handler.create_user_group(user_uid=user_uid)
+        return user_group_profile
 
 
 async def get_user_in_u_group(user_group_uid: UUID, user_uid: UUID):
@@ -449,9 +458,8 @@ async def send_invitation():
 
         # This can be lazy loaded to make this on true loop
 
-        user_dependents = await get_dependents(
-            user_group_uid=user_profile.user_group_uid
-        )
+        # user_dependents =
+        await get_dependents(user_group_uid=user_profile.user_group.user_group_uid)
 
         # dependent_emails = [dependent.email for dependent in user_dependents.result_set]
 
@@ -491,4 +499,5 @@ async def i_am_alive(token: str):
         LOGGER.exception(e)
 
 
+# FUNC To Send Renminder to Users and another Fuction to Send email to Dependents to Join
 # FUNC To Send Renminder to Users and another Fuction to Send email to Dependents to Join

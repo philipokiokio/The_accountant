@@ -1,10 +1,11 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
-from accountant.schemas.user_schemas import UserExtendedProfile
-import accountant.services.tracker_service as tracker_service
-import accountant.schemas.tracker_schemas as schemas
-from accountant.services.service_utils.auth_utils import get_current_user
 
+from fastapi import APIRouter, Depends, status
+
+import accountant.schemas.tracker_schemas as schemas
+import accountant.services.tracker_service as tracker_service
+from accountant.schemas.user_schemas import UserExtendedProfile
+from accountant.services.service_utils.auth_utils import get_current_user
 
 api_router = APIRouter(prefix="/v1/tracker", tags=["Tracker"])
 
@@ -88,4 +89,5 @@ async def delete_tracker(
 async def get_tracker_dashboard(
     user_profile: UserExtendedProfile = Depends(get_current_user),
 ):
+    return await tracker_service.tracker_dashboard(user_uid=user_profile.user_uid)
     return await tracker_service.tracker_dashboard(user_uid=user_profile.user_uid)

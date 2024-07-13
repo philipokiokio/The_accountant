@@ -1,13 +1,15 @@
-from accountant.root.database import async_session
-from accountant.database.orms.tracker_orm import Tracker as TrackerDB
-from sqlalchemy import select, insert, update, delete, and_, func
+from uuid import UUID
+
+from sqlalchemy import delete, func, insert, select, update
+
 import accountant.schemas.tracker_schemas as schemas
+from accountant.database.orms.tracker_orm import Tracker as TrackerDB
+from accountant.root.database import async_session
 from accountant.services.service_utils.accountant_exceptions import (
     DeleteError,
     NotFoundError,
     UpdateError,
 )
-from uuid import UUID
 
 
 async def create_record(track_set: list[schemas.TrackerExtended]):
@@ -162,5 +164,7 @@ async def tracking_dashboard(user_uid: UUID):
                         year_trend[year][currency][month] = {
                             "amount": amount,
                         }
+
+        return schemas.TrackingDashBoard(summary=summary, yearly_chart=year_trend)
 
         return schemas.TrackingDashBoard(summary=summary, yearly_chart=year_trend)

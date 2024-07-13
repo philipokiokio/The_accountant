@@ -1,0 +1,16 @@
+repos:
+- repo: local
+  hooks:
+    - id: black
+      name: black formatter
+      entry: make format
+      language: system
+      pass_filenames: false
+      args: []
+
+    - id: ruff
+      name: ruff formatter
+      entry: make standard
+      language: system
+      pass_filenames: false
+      args: []

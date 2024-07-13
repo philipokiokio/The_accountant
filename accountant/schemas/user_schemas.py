@@ -20,23 +20,25 @@ class UserUpdate(AbstractModel):
     password: Optional[str] = None
     is_verified: Optional[bool] = None
     is_alive: Optional[bool] = None
+    added_to_user_group_uid: Optional[UUID] = None
 
 
 class UserProfile(User):
     user_uid: UUID
     is_verified: bool
-    user_group_uid: Optional[UUID] = None
     date_created_utc: datetime
-
-
-class UserExtendedProfile(UserProfile):
-    dependents: Optional[list[UserProfile]] = []
-    password: ClassVar[str]
+    added_to_user_group_uid: Optional[UUID] = None
 
 
 class UserGroup(AbstractModel):
     owner_uid: UUID
     user_group_uid: UUID
+
+
+class UserExtendedProfile(UserProfile):
+    dependents: Optional[list[UserProfile]] = []
+    password: ClassVar[str]
+    user_group: Optional[UserGroup]
 
 
 class UserGroupMember(AbstractModel):

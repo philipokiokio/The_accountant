@@ -14,8 +14,11 @@ class Platform(AbstractBase):
     name = Column(String, nullable=False)
     access_credential = Column(JSONB, nullable=True)
     user_group_uid = Column(
-        UUID, ForeignKey("user_group.user_uid", ondelete="CASCADE"), nullable=False
+        UUID,
+        ForeignKey("user_group.user_group_uid", ondelete="CASCADE"),
+        nullable=False,
     )
+    investment = relationship("Investment", back_populates="platform")
 
 
 class Investment(AbstractBase):
@@ -31,8 +34,13 @@ class Investment(AbstractBase):
     nature = Column(String, nullable=False)
     end_date = Column(Date, nullable=False)
     is_still_open = Column(Boolean, nullable=False)
-    user_group_uid = Column(UUID, nullable=False)
+    user_group_uid = Column(
+        UUID,
+        ForeignKey("user_group.user_group_uid", ondelete="CASCADE"),
+        nullable=False,
+    )
     platform = relationship("Platform")
+    trackers = relationship("InvestmentTracker", back_populates="investment")
 
 
 class InvestmentTracker(AbstractBase):
@@ -40,6 +48,7 @@ class InvestmentTracker(AbstractBase):
 
     uid = Column(UUID, primary_key=True, default=uuid4)
     amount = Column(DECIMAL, nullable=False)
+    currency = Column(String, nullable=False)
     investment_uid = Column(
         UUID,
         ForeignKey("investment.investment_uid", ondelete="CASCADE"),

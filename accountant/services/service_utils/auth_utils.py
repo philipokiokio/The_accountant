@@ -16,7 +16,7 @@ import accountant.services.auth_service as user_service
 
 import accountant.services.service_utils.redis_utils as redis_utils
 from accountant.root.settings import Settings
-from accountant.schemas.user_schemas import TokenData
+from accountant.schemas.user_schemas import TokenData, UserExtendedProfile
 
 LOGGER = logging.getLogger(__name__)
 settings = Settings()
@@ -181,3 +181,22 @@ async def get_current_user(
         )
 
     return user
+
+
+async def get_user_group_uid(
+    user_profile: UserExtendedProfile = Depends(get_current_user),
+):
+
+    if user_profile.added_to_user_group_uid is None:
+
+        user_group = await user_service.get_user_group(user_uid=user_profile.user_uid)
+
+        if user_group.owner_uid != user_profile.user_uid:
+            raise HTTPException(
+                detail="user has no access to this user_group",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return user_group.user_group_uid
+
+    return user_profile.added_to_user_group_uid

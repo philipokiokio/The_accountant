@@ -13,6 +13,7 @@ class User(AbstractBase):
     password = Column(String, nullable=False)
     is_verified = Column(Boolean, nullable=False, server_default=str(False))
     is_alive = Column(Boolean, nullable=True)
+    added_to_user_group_uid = Column(UUID, nullable=True)
     user_group = relationship("UserGroup", back_populates="user")
 
 
