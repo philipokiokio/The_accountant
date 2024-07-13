@@ -1,13 +1,13 @@
-import accountant.schemas.investment_schemas as schemas
-
-import accountant.database.handlers.investment_handler as investment_handler
-from fastapi import HTTPException, status
-from accountant.services.service_utils.accountant_exceptions import NotFoundError
 from uuid import UUID
 
-import accountant.services.service_utils.investment_utils as investment_utils
-import accountant.services.service_utils.auth_utils as auth_utils
+from fastapi import HTTPException, status
+
+import accountant.database.handlers.investment_handler as investment_handler
+import accountant.schemas.investment_schemas as schemas
 import accountant.services.auth_service as user_service
+import accountant.services.service_utils.auth_utils as auth_utils
+import accountant.services.service_utils.investment_utils as investment_utils
+from accountant.services.service_utils.accountant_exceptions import NotFoundError
 
 
 async def check_platform(platform_name: str, user_group_uid: UUID):
@@ -268,3 +268,59 @@ async def delete_invest_tracker(investment_uid: UUID, tracker_uid: UUID):
     await investment_handler.delete_investment_tracker(uid=tracker_uid)
 
     return {}
+
+
+async def investment_dashboard(user_group_uid: UUID):
+
+    investment_dashboard_profile = {}
+
+    platform_profiles = await get_platforms(user_group_uid=user_group_uid)
+
+    for platform in platform_profiles.result_set:
+
+        if investment_dashboard_profile.get(platform.name) is None:
+            investment_dashboard_profile[platform.name] = {
+                "cash_in": {},
+                "cash_out": {},
+            }
+
+        for plans in platform.investment_plans:
+            for tracker in plans.activities:
+
+                if tracker.transaction_type == schemas.TransactionType.credit.value:
+
+                    if (
+                        investment_dashboard_profile[platform.name]["cash_in"].get(
+                            tracker.currency
+                        )
+                        is None
+                    ):
+
+                        investment_dashboard_profile[platform.name]["cash_in"][
+                            tracker.currency
+                        ] = tracker.amount
+
+                    else:
+                        investment_dashboard_profile[platform.name]["cash_in"][
+                            tracker.currency
+                        ] += tracker.amount
+
+                else:
+
+                    if (
+                        investment_dashboard_profile[platform.name]["cash_in"].get(
+                            tracker.currency
+                        )
+                        is None
+                    ):
+
+                        investment_dashboard_profile[platform.name]["cash_in"][
+                            tracker.currency
+                        ] = tracker.amount
+
+                    else:
+                        investment_dashboard_profile[platform.name]["cash_in"][
+                            tracker.currency
+                        ] += tracker.amount
+
+    return schemas.InvestmentDashboard(result=investment_dashboard_profile)

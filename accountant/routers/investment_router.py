@@ -1,13 +1,14 @@
 from uuid import UUID
-from fastapi import APIRouter, Body, status, Depends
-from accountant.schemas.user_schemas import UserExtendedProfile
-import accountant.services.investment_service as investment_service
+
+from fastapi import APIRouter, Body, Depends, status
+
 import accountant.schemas.investment_schemas as schemas
+import accountant.services.investment_service as investment_service
+from accountant.schemas.user_schemas import UserExtendedProfile
 from accountant.services.service_utils.auth_utils import (
     get_current_user,
     get_user_group_uid,
 )
-
 
 api_router = APIRouter(prefix="/v1/investment", tags=["Investment"])
 
@@ -287,3 +288,19 @@ async def delete_investment_tracker(
         investment_uid=investment_uid,
         tracker_uid=tracker_uid,
     )
+
+
+inv_api_router = APIRouter(prefix="/v1/investor", tags=["Investment Dashboard"])
+
+
+@api_router.get(
+    path="/dashboard",
+    response_model=schemas.InvestmentDashboard,
+    status_code=status.HTTP_200_OK,
+)
+async def investment_dashboard(
+    user_profile: UserExtendedProfile = Depends(get_current_user),
+    user_group_uid: UUID = Depends(get_user_group_uid),
+):
+
+    return await investment_service.investment_dashboard(user_group_uid=user_group_uid)

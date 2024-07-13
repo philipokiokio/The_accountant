@@ -1,9 +1,12 @@
-from accountant.root.utils.abstract_schema import AbstractModel, Currency
+from datetime import date, datetime
+from decimal import Decimal
 from enum import Enum
 from typing import Optional, Union
 from uuid import UUID
-from datetime import datetime, date
-from pydantic import conint, condecimal, EmailStr
+
+from pydantic import EmailStr, condecimal, conint
+
+from accountant.root.utils.abstract_schema import AbstractModel, Currency
 
 
 class InvestmentClass(str, Enum):
@@ -106,3 +109,12 @@ class PlatformUpdate(AbstractModel):
     name: Optional[str] = None
     platform_type: Optional[PlatformType] = None
     access_credential: Optional[PlatformAccessCredential] = None
+
+
+class PlatformStatistics(AbstractModel):
+    cash_in: Union[dict[Currency, Decimal], dict]
+    cash_out: Union[dict[Currency, Decimal], dict]
+
+
+class InvestmentDashboard(AbstractModel):
+    result: Union[dict[str, PlatformStatistics], dict] = {}
