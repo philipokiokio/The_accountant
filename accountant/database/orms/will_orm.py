@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Date, Boolean
+from sqlalchemy import Column, ForeignKey, Date, Boolean, String
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 from sqlalchemy.dialects.postgresql import UUID
@@ -9,6 +9,7 @@ class Will(AbstractBase):
 
     __tablename__ = "will"
     will_uid = Column(UUID, primary_key=True, default=uuid4)
+    instruction = Column(String, nullable=True)
     investment_uid = Column(
         UUID,
         ForeignKey("investment.investment_uid", ondelete="CASCADE"),

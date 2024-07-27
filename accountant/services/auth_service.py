@@ -388,7 +388,7 @@ async def dependent_check(email: str, user_group_uid: UUID):
         raise e
 
 
-async def add_dependent(emails: str, user_group_uid: UUID):
+async def add_dependent(emails: list[str], user_group_uid: UUID):
 
     uninvited = []
     for email in emails:
@@ -499,5 +499,4 @@ async def i_am_alive(token: str):
         LOGGER.exception(e)
 
 
-# FUNC To Send Renminder to Users and another Fuction to Send email to Dependents to Join
 # FUNC To Send Renminder to Users and another Fuction to Send email to Dependents to Join
