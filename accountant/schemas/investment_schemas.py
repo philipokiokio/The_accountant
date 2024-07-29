@@ -118,3 +118,7 @@ class PlatformStatistics(AbstractModel):
 
 class InvestmentDashboard(AbstractModel):
     result: Union[dict[str, PlatformStatistics], dict] = {}
+
+
+class InvestmentExtendedProfile(InvestmentProfile):
+    platform: PlatformProfile

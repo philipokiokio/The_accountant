@@ -253,6 +253,28 @@ async def get_investments(platform_uid: UUID):
         )
 
 
+async def get_investment_via_investment_uid(investment_uid: UUID):
+    async with async_session() as session:
+
+        stmt = (
+            select(InvestmentDB)
+            .options(joinedload(InvestmentDB.platform))
+            .filter(
+                InvestmentDB.investment_uid == investment_uid,
+            )
+        )
+
+        result = (await session.execute(statement=stmt)).unique().scalar_one_or_none()
+
+        if result is None:
+
+            raise NotFoundError
+
+        return schemas.InvestmentExtendedProfile(
+            **result.as_dict(), platform=result.platform
+        )
+
+
 async def get_investment(platform_uid: UUID, investment_uid: UUID):
     async with async_session() as session:
 

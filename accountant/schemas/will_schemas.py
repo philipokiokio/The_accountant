@@ -23,8 +23,8 @@ class WillProfile(Will):
 
 class WillUpdate(AbstractModel):
     invitation_uid: Optional[UUID] = None
-    investment_uid: Optional[UUID] = None
     is_claimed: Optional[bool] = None
+    assigned_uid: Optional[UUID] = None
 
 
 class WillExtendedProfile(WillProfile):

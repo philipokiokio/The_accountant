@@ -147,6 +147,13 @@ async def get_investments(platform_uid: UUID, user_group_uid: UUID):
     return await investment_handler.get_investments(platform_uid=platform_uid)
 
 
+async def get_investment_via_investment_uid(investment_uid: UUID):
+
+    return await investment_handler.get_investment_via_investment_uid(
+        investment_uid=investment_uid
+    )
+
+
 async def get_investment(
     platform_uid: UUID, user_group_uid: UUID, investment_uid: UUID
 ):
