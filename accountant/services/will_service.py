@@ -8,6 +8,7 @@ import accountant.services.investment_service as investment_service
 import accountant.services.auth_service as invitation_service
 import accountant.schemas.will_schemas as schemas
 from accountant.services.service_utils.accountant_exceptions import NotFoundError
+from datetime import date
 
 
 async def check_investment_will_alotment(investment_uid: UUID):
@@ -106,7 +107,7 @@ async def delete_will(will_uid: UUID, owner_uid: UUID):
 
 
 async def update_assigned_will(will_uid: UUID, user_uid: UUID, is_claimed: bool = None):
-
+    date_claimed = None
     will_profile = await get_will(will_uid=will_uid)
 
     if will_profile.assigned_uid != user_uid:
@@ -116,12 +117,14 @@ async def update_assigned_will(will_uid: UUID, user_uid: UUID, is_claimed: bool 
         )
 
     if will_profile.is_claimed is True:
-
+        date_claimed = date.today()
         return will_profile
 
     return await will_handler.update_will(
         will_uid=will_uid,
-        will_update=schemas.WillUpdate(is_claimed=is_claimed, assigned_uid=user_uid),
+        will_update=schemas.WillUpdate(
+            is_claimed=is_claimed, date_claimed=date_claimed, assigned_uid=user_uid
+        ),
     )
 
 

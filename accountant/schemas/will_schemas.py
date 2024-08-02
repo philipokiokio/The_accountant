@@ -25,6 +25,7 @@ class WillUpdate(AbstractModel):
     invitation_uid: Optional[UUID] = None
     is_claimed: Optional[bool] = None
     assigned_uid: Optional[UUID] = None
+    date_claimed: Optional[date]
 
 
 class WillExtendedProfile(WillProfile):

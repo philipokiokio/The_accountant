@@ -373,7 +373,7 @@ async def create_investment_tracker(
             raise CreateError
 
         await session.commit()
-        return schemas.InvestmentTracker(**result.as_dict())
+        return schemas.InvestmentTrackerProfile(**result.as_dict())
 
 
 async def get_investment_trackers(investment_uid: UUID):

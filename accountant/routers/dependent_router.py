@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, status
+from pydantic import EmailStr
 
 import accountant.schemas.user_schemas as schemas
 import accountant.services.auth_service as dependent_service
@@ -62,14 +63,14 @@ async def get_dependent(
 )
 async def update_dependent(
     dependent_uid: UUID,
-    dependent_update: schemas.UserGroupInvitationUpdate,
+    email: EmailStr = Body(embed=True),
     current_user_profile: schemas.UserProfile = Depends(get_current_user),
     user_group_uid: UUID = Depends(get_user_group_uid),
 ):
     return await dependent_service.update_dependent(
         user_group_uid=user_group_uid,
         uid=dependent_uid,
-        dependent_invitation=dependent_update,
+        dependent_invitation=schemas.UserGroupInvitationUpdate(email=email),
     )
 
 

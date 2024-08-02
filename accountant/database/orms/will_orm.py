@@ -24,6 +24,6 @@ class Will(AbstractBase):
     owner_uid = Column(
         UUID, ForeignKey("users.user_uid", ondelete="CASCADE"), nullable=False
     )
-    date_claimed = Column(Date, mullable=True)
+    date_claimed = Column(Date, nullable=True)
     is_claimed = Column(Boolean, server_default=str(False))
     investment = relationship("Investment")

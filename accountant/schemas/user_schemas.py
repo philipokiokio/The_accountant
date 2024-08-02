@@ -38,7 +38,7 @@ class UserGroup(AbstractModel):
 class UserExtendedProfile(UserProfile):
     dependents: Optional[list[UserProfile]] = []
     password: ClassVar[str]
-    user_group: Optional[UserGroup]
+    user_group: Optional[UserGroup] = None
 
 
 class UserGroupMember(AbstractModel):

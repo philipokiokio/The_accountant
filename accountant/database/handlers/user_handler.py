@@ -24,13 +24,16 @@ async def create_user(user: schemas.User):
     async with async_session() as session:
 
         stmt = insert(UserDB).values(**user.model_dump()).returning(UserDB)
+        try:
+            result = (await session.execute(statement=stmt)).scalar_one_or_none()
 
-        result = (await session.execute(statement=stmt)).scalar_one_or_none()
+            if result is None:
+                await session.rollback()
+                raise CreateError
 
-        if result is None:
+        except Exception:
             await session.rollback()
             raise CreateError
-
         await session.commit()
 
     return schemas.UserExtendedProfile(**result.as_dict())
@@ -377,5 +380,4 @@ async def delete_dependent(user_group_uid: UUID, uid: UUID):
             raise DeleteError
 
         await session.commit()
-        return schemas.UserGroupIVProfile(**result.as_dict())
         return schemas.UserGroupIVProfile(**result.as_dict())

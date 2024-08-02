@@ -394,12 +394,17 @@ async def add_dependent(emails: list[str], user_group_uid: UUID):
     for email in emails:
 
         try:
-            await dependent_check(emai=email, user_group_uid=user_group_uid)
+            await dependent_check(email=email, user_group_uid=user_group_uid)
         except NotFoundError:
 
             uninvited.append(
                 schemas.UserGroupInvitation(email=email, user_group_uid=user_group_uid)
             )
+    if len(uninvited) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="all dependents have been added previously",
+        )
 
     return await user_db_handler.create_dependent(user_g_iv=uninvited)
 

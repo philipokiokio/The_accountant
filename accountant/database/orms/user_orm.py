@@ -9,7 +9,7 @@ class User(AbstractBase):
     __tablename__ = "users"
     user_uid = Column(UUID, primary_key=True, default=uuid4)
     name = Column(String, nullable=False)
-    email = Column(String, nullable=False)
+    email = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
     is_verified = Column(Boolean, nullable=False, server_default=str(False))
     is_alive = Column(Boolean, nullable=True)
@@ -54,6 +54,5 @@ class UserGroupInvitation(AbstractBase):
     )
     email = Column(String, nullable=False)
     is_accepted = Column(
-        Boolean,
-        nullable=False,
+        Boolean, nullable=False, default=False, server_default=str(False)
     )
