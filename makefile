@@ -20,8 +20,8 @@ install :
 # integration-test:
 # 	pytest --cov=accountant tests/integration_test
 
-# unit-test:
-# 	pytest --cov=accountant tests/unit_test
+unit-test:
+	pytest --cov=accountant tests/unit_tests
 
 # all-test:
 # 	pytest --cov=accountant tests

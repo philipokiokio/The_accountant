@@ -90,4 +90,3 @@ async def get_tracker_dashboard(
     user_profile: UserExtendedProfile = Depends(get_current_user),
 ):
     return await tracker_service.tracker_dashboard(user_uid=user_profile.user_uid)
-    return await tracker_service.tracker_dashboard(user_uid=user_profile.user_uid)
