@@ -2,6 +2,8 @@
 venv
 __pycache__
 .local_migrations
+.local_migration
+.local-migration
 .coverage
 .ruff_cache
 .pytest_cache
